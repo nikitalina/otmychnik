@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Отмычник — решатель замков Gothic 1 Remake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root {
+    --stone-0: #0e1013;
+    --stone-1: #15181d;
+    --stone-2: #1c2027;
+    --iron: #2e333c;
+    --iron-line: #3a4049;
+    --text: #cdd2da;
+    --text-dim: #8a909b;
+    --text-faint: #5c626d;
+    --ore: #d39a45;
+    --ore-soft: #b9863a;
+    --ore-glow: rgba(211,154,69,.45);
+    --green: #5fae8c;
+    --green-glow: rgba(95,174,140,.5);
+    --rust: #b04a3c;
+    --rust-soft: #8a3b30;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1a1e24 0%, var(--stone-0) 60%),
+      var(--stone-0);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 28px 18px 80px; }
+
+  .masthead { text-align: center; margin-bottom: 8px; }
+  .masthead h1 {
+    font-family: "Cinzel", serif;
+    font-weight: 700;
+    letter-spacing: .14em;
+    font-size: 30px;
+    margin: 0;
+    color: var(--ore);
+    text-shadow: 0 1px 0 #000, 0 0 26px var(--ore-glow);
+  }
+  .masthead .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: .06em;
+    margin-top: 6px;
+  }
+  .rule {
+    height: 1px; border: 0;
+    background: linear-gradient(90deg, transparent, var(--iron-line) 20%, var(--iron-line) 80%, transparent);
+    margin: 22px 0;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, var(--stone-2), var(--stone-1));
+    border: 1px solid var(--iron-line);
+    border-radius: 10px;
+    padding: 18px 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.35);
+  }
+  .panel > h2 {
+    font-family: "Cinzel", serif;
+    font-weight: 600;
+    letter-spacing: .1em;
+    font-size: 15px;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel > h2 .ord {
+    font-size: 12px; color: var(--ore-soft);
+    border: 1px solid var(--ore-soft);
+    width: 22px; height: 22px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  details.help { margin: 0 0 18px; }
+  details.help summary {
+    cursor: pointer; color: var(--text-dim); font-size: 13px;
+    letter-spacing: .04em; list-style: none; user-select: none;
+    padding: 8px 0;
+  }
+  details.help summary::-webkit-details-marker { display: none; }
+  details.help summary::before { content: "▸ "; color: var(--ore-soft); }
+  details.help[open] summary::before { content: "▾ "; }
+  details.help .body {
+    color: var(--text-dim); font-size: 13.5px; line-height: 1.65;
+    border-left: 2px solid var(--iron-line); padding: 4px 0 4px 14px; margin-top: 4px;
+  }
+  details.help .body b { color: var(--text); font-weight: 600; }
+  details.help .body .k {
+    color: var(--ore); font-family: "Cinzel", serif; font-size: 12px; letter-spacing: .05em;
+  }
+
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+  .field label {
+    display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 6px;
+  }
+  input[type="text"] {
+    background: var(--stone-0); border: 1px solid var(--iron-line); color: var(--text);
+    border-radius: 6px; padding: 9px 11px; font-size: 14px; width: 240px; outline: none;
+  }
+  input[type="text"]:focus { border-color: var(--ore-soft); box-shadow: 0 0 0 2px rgba(211,154,69,.15); }
+
+  .stepper { display: inline-flex; align-items: stretch; }
+  .stepper button {
+    background: var(--iron); color: var(--text); border: 1px solid var(--iron-line);
+    width: 34px; font-size: 18px; cursor: pointer;
+  }
+  .stepper button:first-child { border-radius: 6px 0 0 6px; }
+  .stepper button:last-child { border-radius: 0 6px 6px 0; }
+  .stepper button:hover { background: #353b45; }
+  .stepper .val {
+    min-width: 46px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--stone-0); border-top: 1px solid var(--iron-line); border-bottom: 1px solid var(--iron-line);
+    font-family: "Cinzel", serif; font-size: 16px; color: var(--ore);
+  }
+
+  button.btn {
+    font-family: "Cinzel", serif; letter-spacing: .08em; font-size: 13px;
+    background: linear-gradient(180deg, #3a3026, #2a231b);
+    color: var(--ore); border: 1px solid var(--ore-soft); border-radius: 7px;
+    padding: 10px 16px; cursor: pointer; text-transform: uppercase;
+    transition: background .15s, box-shadow .15s, transform .05s;
+  }
+  button.btn:hover { box-shadow: 0 0 18px var(--ore-glow); }
+  button.btn:active { transform: translateY(1px); }
+  button.btn.ghost { background: transparent; color: var(--text-dim); border-color: var(--iron-line); }
+  button.btn.ghost:hover { color: var(--text); border-color: var(--text-dim); box-shadow: none; }
+  button.btn.solve {
+    background: linear-gradient(180deg, #4a3a26, #34281a);
+    font-size: 14px; padding: 12px 22px;
+  }
+  button.btn:disabled { opacity: .4; cursor: default; box-shadow: none; }
+
+  /* lock board */
+  .plate { display: flex; align-items: center; gap: 14px; margin: 10px 0; }
+  .plate .tag {
+    font-family: "Cinzel", serif; font-size: 13px; color: var(--text-dim);
+    width: 34px; text-align: right; flex: 0 0 auto;
+  }
+  .plate.solved .tag { color: var(--green); }
+  .track {
+    position: relative; flex: 1 1 auto; height: 40px;
+    background: linear-gradient(180deg, #0c0e11, #14171c);
+    border: 1px solid var(--iron-line); border-radius: 7px;
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    overflow: hidden;
+  }
+  .hole-cell {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    border-right: 1px solid rgba(255,255,255,.03);
+  }
+  .hole-cell:last-child { border-right: 0; }
+  .hole-cell.center { background: rgba(211,154,69,.07); }
+  .hole-cell.center::after {
+    content: ""; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 2px; background: var(--ore-soft); opacity: .7; border-radius: 2px;
+  }
+  .hole {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #05070a; box-shadow: inset 0 1px 2px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .hole-cell.editable { cursor: pointer; }
+  .hole-cell.editable:hover .hole { box-shadow: inset 0 0 0 1px var(--ore-soft); }
+  .pin {
+    position: absolute; top: 0; height: 100%; width: calc(100% / 7);
+    display: flex; align-items: center; justify-content: center;
+    transition: left .32s cubic-bezier(.4,.0,.2,1);
+    pointer-events: none;
+  }
+  .pin .dot {
+    width: 17px; height: 17px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f0c074, var(--ore) 55%, #7d5a23 100%);
+    box-shadow: 0 0 12px var(--ore-glow), inset 0 -2px 3px rgba(0,0,0,.4);
+  }
+  .plate.solved .pin .dot {
+    background: radial-gradient(circle at 35% 30%, #b6f0d6, var(--green) 55%, #2f6e57 100%);
+    box-shadow: 0 0 14px var(--green-glow), inset 0 -2px 3px rgba(0,0,0,.4);
+  }
+
+  /* linkage matrix */
+  .matrix-scroll { overflow-x: auto; padding-bottom: 4px; }
+  table.matrix { border-collapse: collapse; }
+  table.matrix th, table.matrix td { padding: 0; }
+  table.matrix th {
+    font-family: "Cinzel", serif; font-weight: 500; font-size: 12px; color: var(--text-faint);
+    height: 30px; width: 40px; text-align: center;
+  }
+  table.matrix th.rowlab {
+    text-align: right; width: 64px; padding-right: 10px; color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .cyc {
+    width: 36px; height: 36px; border: 1px solid var(--iron-line); border-radius: 6px;
+    background: var(--stone-0); color: var(--text-dim); font-size: 17px; cursor: pointer;
+    margin: 3px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .cyc:hover { border-color: var(--text-dim); }
+  .cyc.pos { color: var(--ore); border-color: var(--ore-soft); }
+  .cyc.neg { color: var(--green); border-color: #3f6e5b; }
+  .cyc.self {
+    color: var(--ore); border-color: var(--ore-soft); background: rgba(211,154,69,.08);
+    cursor: default; opacity: .85;
+  }
+  .matrix-note { color: var(--text-faint); font-size: 12px; margin-top: 10px; line-height: 1.6; }
+
+  /* saved locks */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--stone-0); border: 1px solid var(--iron-line); border-radius: 20px;
+    padding: 6px 8px 6px 13px; font-size: 13px; color: var(--text);
+  }
+  .chip button.load { background: none; border: 0; color: var(--text); cursor: pointer; font-size: 13px; padding: 0; }
+  .chip button.load:hover { color: var(--ore); }
+  .chip button.del {
+    background: none; border: 0; color: var(--text-faint); cursor: pointer; font-size: 15px;
+    width: 18px; height: 18px; line-height: 1; border-radius: 50%;
+  }
+  .chip button.del:hover { color: var(--rust); }
+  .empty-hint { color: var(--text-faint); font-size: 13px; font-style: italic; }
+
+  /* solver result */
+  .verdict {
+    font-family: "Cinzel", serif; font-size: 16px; letter-spacing: .06em;
+    padding: 14px 16px; border-radius: 8px; margin: 4px 0 16px;
+    border: 1px solid var(--iron-line); background: var(--stone-0);
+  }
+  .verdict.ok { color: var(--ore); border-color: var(--ore-soft); }
+  .verdict.win { color: var(--green); border-color: #3f6e5b; }
+  .verdict.bad { color: var(--rust); border-color: var(--rust-soft); }
+  .verdict .big { font-size: 26px; }
+
+  .player-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+  .now {
+    font-family: "Cinzel", serif; letter-spacing: .05em; font-size: 15px;
+    padding: 8px 14px; border-radius: 7px; border: 1px solid var(--ore-soft);
+    background: rgba(211,154,69,.08); color: var(--ore);
+  }
+  .now .arrow { font-size: 20px; vertical-align: -2px; margin: 0 4px; }
+  .now.done { border-color: #3f6e5b; background: rgba(95,174,140,.08); color: var(--green); }
+  .progress { color: var(--text-dim); font-size: 13px; }
+
+  .toggle { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; color: var(--text-dim); font-size: 13px; user-select: none; }
+  .toggle .sw {
+    width: 38px; height: 22px; border-radius: 12px; background: var(--stone-0);
+    border: 1px solid var(--iron-line); position: relative; transition: background .15s;
+  }
+  .toggle .sw .knob {
+    position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-faint); transition: left .15s, background .15s;
+  }
+  .toggle.on .sw { background: rgba(211,154,69,.18); border-color: var(--ore-soft); }
+  .toggle.on .sw .knob { left: 18px; background: var(--ore); }
+
+  .seq { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .move {
+    font-family: "Cinzel", serif; font-size: 13px; letter-spacing: .03em;
+    background: var(--stone-0); border: 1px solid var(--iron-line); border-radius: 6px;
+    padding: 5px 9px; color: var(--text-dim);
+  }
+  .move .a { color: var(--ore); }
+  .move .a.neg { color: var(--green); }
+  .move.past { opacity: .42; }
+  .move.cur { border-color: var(--ore-soft); color: var(--text); box-shadow: 0 0 10px var(--ore-glow); }
+  .move .idx { color: var(--text-faint); margin-right: 5px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .foot { text-align: center; color: var(--text-faint); font-size: 12px; margin-top: 30px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+const SLOTS = 7;
+const TARGET = 3;        // индекс центрального паза (паз 4), 0-индексация
+const MIN_N = 2, MAX_N = 7;
+const LS_SAVED = "g1r_solver_locks_v1";
+const LS_CUR = "g1r_solver_current_v1";
+
+/* ---------- модель ---------- */
+
+function identity(n) {
+  const m = [];
+  for (let i = 0; i < n; i++) {
+    const row = new Array(n).fill(0);
+    row[i] = 1;
+    m.push(row);
+  }
+  return m;
+}
+
+function resizeLock(lock, n) {
+  const pos = [];
+  for (let i = 0; i < n; i++) pos.push(lock.positions[i] != null ? lock.positions[i] : 4);
+  const eff = [];
+  for (let i = 0; i < n; i++) {
+    const row = new Array(n).fill(0);
+    for (let j = 0; j < n; j++) {
+      if (i === j) row[j] = 1;
+      else if (lock.effect[i] && lock.effect[i][j] != null) row[j] = lock.effect[i][j];
+    }
+    eff.push(row);
+  }
+  return { ...lock, n, positions: pos, effect: eff };
+}
+
+function freshLock() {
+  return { name: "", n: 4, positions: [3, 5, 2, 4], effect: identity(4) };
+}
+
+function exampleLock() {
+  // Эталон из обсуждения на Steam, минимум 36 ходов.
+  return {
+    name: "Пример (5 пластин)",
+    n: 5,
+    positions: [1, 3, 7, 6, 5],
+    effect: [
+      [ 1, 0, 0,-1, 0],
+      [ 0, 1, 0,-1, 0],
+      [ 1, 0, 1, 0,-1],
+      [ 0, 0, 0, 1, 1],
+      [ 1, 1, 0, 0, 1],
+    ],
+  };
+}
+
+/* BFS: кратчайшая последовательность ходов до «все по центру», не упираясь в края */
+function solveLock(n, positions1, effect) {
+  const start = positions1.map(p => p - 1);
+  const enc = (a) => { let k = 0; for (let i = 0; i < n; i++) k += a[i] << (3 * i); return k; };
+  const goal = enc(new Array(n).fill(TARGET));
+  const startKey = enc(start);
+  if (startKey === goal) return { steps: [] };
+  const visited = new Set([startKey]);
+  const parent = new Map();
+  let queue = [start];
+  let explored = 0;
+  const MAX = 4_000_000;
+  while (queue.length) {
+    const next = [];
+    for (const pos of queue) {
+      if (++explored > MAX) return { error: "too_big" };
+      const curKey = enc(pos);
+      for (let i = 0; i < n; i++) {
+        for (const d of [1, -1]) {
+          const np = new Array(n);
+          let ok = true;
+          for (let j = 0; j < n; j++) {
+            const v = pos[j] + d * effect[i][j];
+            if (v < 0 || v > 6) { ok = false; break; }
+            np[j] = v;
+          }
+          if (!ok) continue;
+          const k = enc(np);
+          if (visited.has(k)) continue;
+          visited.add(k);
+          parent.set(k, [curKey, i, d]);
+          if (k === goal) {
+            const steps = [];
+            let cur = k;
+            while (cur !== startKey) {
+              const [pk, pl, dd] = parent.get(cur);
+              steps.push({ plate: pl, dir: dd });
+              cur = pk;
+            }
+            steps.reverse();
+            return { steps };
+          }
+          next.push(np);
+        }
+      }
+    }
+    queue = next;
+  }
+  return { error: "no_solution" };
+}
+
+function simulate(n, positions1, effect, steps) {
+  const states = [positions1.slice()];
+  let cur = positions1.slice();
+  for (const s of steps) {
+    cur = cur.slice();
+    for (let j = 0; j < n; j++) cur[j] += s.dir * effect[s.plate][j];
+    states.push(cur);
+  }
+  return states;
+}
+
+/* ---------- части интерфейса ---------- */
+
+function Track({ pinSlot, editable, solved, onSet }) {
+  const cells = [];
+  for (let c = 0; c < SLOTS; c++) {
+    cells.push(
+      <div
+        key={c}
+        className={"hole-cell" + (c === TARGET ? " center" : "") + (editable ? " editable" : "")}
+        onClick={editable ? () => onSet(c) : undefined}
+      >
+        <span className="hole"></span>
+      </div>
+    );
+  }
+  const pinLeft = (pinSlot * 100 / SLOTS) + "%";
+  return (
+    <div className="track">
+      {cells}
+      <div className="pin" style={{ left: pinLeft }}>
+        <span className="dot"></span>
+      </div>
+    </div>
+  );
+}
+
+function PositionsEditor({ lock, setLock }) {
+  const setPin = (i, slot) => {
+    const positions = lock.positions.slice();
+    positions[i] = slot + 1;
+    setLock({ ...lock, positions });
+  };
+  const rows = [];
+  for (let i = 0; i < lock.n; i++) {
+    const slot = lock.positions[i] - 1;
+    const solved = slot === TARGET;
+    rows.push(
+      <div className={"plate" + (solved ? " solved" : "")} key={i}>
+        <span className="tag">П{i + 1}</span>
+        <Track pinSlot={slot} editable={true} solved={solved} onSet={(s) => setPin(i, s)} />
+      </div>
+    );
+  }
+  return <div>{rows}</div>;
+}
+
+function LinkageMatrix({ lock, setLock }) {
+  const cycle = (i, j) => {
+    const order = { 0: 1, 1: -1, "-1": 0 };
+    const effect = lock.effect.map(r => r.slice());
+    effect[i][j] = order[effect[i][j]];
+    setLock({ ...lock, effect });
+  };
+  const arrow = (v) => v === 1 ? "→" : v === -1 ? "←" : "·";
+  const head = [<th key="h" className="rowlab"></th>];
+  for (let j = 0; j < lock.n; j++) head.push(<th key={"c" + j}>П{j + 1}</th>);
+  const rows = [];
+  for (let i = 0; i < lock.n; i++) {
+    const cells = [<th key={"r" + i} className="rowlab">П{i + 1} →</th>];
+    for (let j = 0; j < lock.n; j++) {
+      if (i === j) {
+        cells.push(<td key={j}><div className="cyc self" title="Сама пластина">→</div></td>);
+      } else {
+        const v = lock.effect[i][j];
+        const cls = v === 1 ? " pos" : v === -1 ? " neg" : "";
+        cells.push(
+          <td key={j}>
+            <button className={"cyc" + cls} onClick={() => cycle(i, j)}
+              title={"При движении П" + (i + 1) + " вправо пластина П" + (j + 1) + ": " + (v === 1 ? "тоже вправо" : v === -1 ? "влево" : "не двигается")}>
+              {arrow(v)}
+            </button>
+          </td>
+        );
+      }
+    }
+    rows.push(<tr key={i}>{cells}</tr>);
+  }
+  return (
+    <div>
+      <div className="matrix-scroll">
+        <table className="matrix">
+          <thead><tr>{head}</tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+      <div className="matrix-note">
+        Строка задаёт, что происходит, когда вы двигаете её пластину вправо. Клик по клетке переключает реакцию соседней пластины:
+        <span style={{color:"var(--ore)"}}> → вправо</span>,
+        <span style={{color:"var(--green)"}}> ← влево</span>,
+        · без движения. Связи в игре несимметричны: то, что П1 двигает П3, не значит, что П3 двигает П1.
+      </div>
+    </div>
+  );
+}
+
+function Solver({ lock }) {
+  const [result, setResult] = useState(null);   // {steps} | {error}
+  const [snapLock, setSnapLock] = useState(null); // замок на момент решения
+  const [step, setStep] = useState(0);
+  const [flip, setFlip] = useState(false);
+
+  // сброс при изменении замка
+  const sig = JSON.stringify([lock.n, lock.positions, lock.effect]);
+  useEffect(() => { setResult(null); setSnapLock(null); setStep(0); }, [sig]);
+
+  const run = () => {
+    const r = solveLock(lock.n, lock.positions, lock.effect);
+    setResult(r);
+    setSnapLock({ n: lock.n, positions: lock.positions.slice(), effect: lock.effect.map(x => x.slice()) });
+    setStep(0);
+  };
+
+  const states = useMemo(() => {
+    if (!result || result.error || !snapLock) return null;
+    return simulate(snapLock.n, snapLock.positions, snapLock.effect, result.steps);
+  }, [result, snapLock]);
+
+  const dirText = (dir) => {
+    const d = flip ? -dir : dir;
+    return { arrow: d > 0 ? "→" : "←", word: d > 0 ? "вправо" : "влево", neg: d < 0 };
+  };
+
+  let verdict = null, body = null;
+  if (result) {
+    if (result.error === "no_solution") {
+      verdict = <div className="verdict bad">Решения в пределах пазов нет. Проверьте позиции штырьков и матрицу связей.</div>;
+    } else if (result.error === "too_big") {
+      verdict = <div className="verdict bad">Слишком большое пространство перебора. Уменьшите число пластин.</div>;
+    } else if (result.steps.length === 0) {
+      verdict = <div className="verdict win">Замок уже открыт: все штырьки по центру.</div>;
+    } else {
+      const total = result.steps.length;
+      const done = step >= total;
+      const cur = done ? null : result.steps[step];
+      const ct = cur ? dirText(cur.dir) : null;
+      verdict = (
+        <div className="verdict ok"><span className="big">{total}</span> {plural(total, "ход", "хода", "ходов")} до открытия</div>
+      );
+      body = (
+        <div>
+          {(() => {
+            // показываем доску целиком для всех пластин на текущем шаге
+            const st = states ? states[Math.min(step, total)] : snapLock.positions;
+            return st.map((p, i) => {
+              const solved = (p - 1) === TARGET;
+              return (
+                <div className={"plate" + (solved ? " solved" : "")} key={i}>
+                  <span className="tag">П{i + 1}</span>
+                  <Track pinSlot={p - 1} solved={solved} editable={false} />
+                </div>
+              );
+            });
+          })()}
+
+          <div className="player-bar">
+            <button className="btn ghost" onClick={() => setStep(0)} disabled={step === 0}>⏮ В начало</button>
+            <button className="btn ghost" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}>◂ Назад</button>
+            {done
+              ? <span className="now done">Готово ✦ все штырьки по центру</span>
+              : <span className="now">Шаг {step + 1}: П{cur.plate + 1}<span className="arrow">{ct.arrow}</span>{ct.word}</span>}
+            <button className="btn" onClick={() => setStep(s => Math.min(total, s + 1))} disabled={done}>Дальше ▸</button>
+            <button className="btn ghost" onClick={() => setStep(total)} disabled={done}>В конец ⏭</button>
+            <span className="progress">{Math.min(step, total)} / {total}</span>
+          </div>
+
+          <label className={"toggle" + (flip ? " on" : "")} onClick={() => setFlip(f => !f)}>
+            <span className="sw"><span className="knob"></span></span>
+            Если в игре всё наоборот — поменять лево и право местами
+          </label>
+
+          <div className="seq">
+            {result.steps.map((s, idx) => {
+              const t = dirText(s.dir);
+              const cls = idx < step ? " past" : idx === step ? " cur" : "";
+              return (
+                <span className={"move" + cls} key={idx}>
+                  <span className="idx">{idx + 1}.</span>П{s.plate + 1}{" "}
+                  <span className={"a" + (t.neg ? " neg" : "")}>{t.arrow}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div className="panel">
+      <h2><span className="ord">3</span>Решение</h2>
+      <button className="btn solve" onClick={run}>Найти решение</button>
+      <div style={{ marginTop: result ? 16 : 0 }}>
+        {verdict}
+        {body}
+      </div>
+    </div>
+  );
+}
+
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+}
+
+/* ---------- приложение ---------- */
+
+function App() {
+  const [lock, setLock] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_CUR);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return freshLock();
+  });
+  const [saved, setSaved] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_SAVED);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(LS_CUR, JSON.stringify(lock)); } catch (e) {}
+  }, [lock]);
+  useEffect(() => {
+    try { localStorage.setItem(LS_SAVED, JSON.stringify(saved)); } catch (e) {}
+  }, [saved]);
+
+  const setN = (n) => {
+    n = Math.max(MIN_N, Math.min(MAX_N, n));
+    setLock(resizeLock(lock, n));
+  };
+
+  const saveCurrent = () => {
+    const name = (lock.name || "").trim() || ("Замок " + new Date().toLocaleString("ru"));
+    const entry = {
+      id: name.toLowerCase(),
+      name,
+      n: lock.n,
+      positions: lock.positions.slice(),
+      effect: lock.effect.map(r => r.slice()),
+    };
+    setSaved(prev => {
+      const rest = prev.filter(x => x.id !== entry.id);
+      return [entry, ...rest];
+    });
+    if (!lock.name) setLock({ ...lock, name });
+  };
+
+  const loadSaved = (e) => {
+    setLock({ name: e.name, n: e.n, positions: e.positions.slice(), effect: e.effect.map(r => r.slice()) });
+  };
+  const delSaved = (id) => setSaved(prev => prev.filter(x => x.id !== id));
+
+  return (
+    <div className="wrap">
+      <div className="masthead">
+        <h1>ОТМЫЧНИК</h1>
+        <div className="sub">решатель замков · Gothic 1 Remake</div>
+      </div>
+      <hr className="rule" />
+
+      <details className="help">
+        <summary>Как это работает</summary>
+        <div className="body">
+          В ремейке взлом стал логической головоломкой. У замка несколько <b>пластин</b>, у каждой 7 пазов и один штырёк.
+          Цель — завести все штырьки в <b>центральный паз</b> (он отмечен снизу). Сложность в том, что пластины
+          связаны: двигая одну, вы сдвигаете другие, причём связи у каждого замка свои. Если пластину упереть в край,
+          отмычка получает износ и ломается.<br /><br />
+          Чтобы получить решение: укажите число пластин, отметьте текущее положение каждого штырька, затем в матрице
+          задайте связи (для каждой пластины проверьте в игре, кого она тянет, двигая её вправо). Нажмите
+          <span className="k"> Найти решение</span> — приложение выдаст кратчайшую последовательность, не упирающуюся в края.<br /><br />
+          Лево и право у пластин и штырьков визуально противоположны, поэтому если последовательность не открывает замок —
+          включите переключатель в блоке решения, он поменяет стороны местами.
+        </div>
+      </details>
+
+      <div className="panel">
+        <h2><span className="ord">1</span>Замок</h2>
+        <div className="row">
+          <div className="field">
+            <label>Название</label>
+            <input type="text" value={lock.name}
+              placeholder="например, сундук в Старом лагере"
+              onChange={(e) => setLock({ ...lock, name: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Пластин</label>
+            <div className="stepper">
+              <button onClick={() => setN(lock.n - 1)} disabled={lock.n <= MIN_N}>−</button>
+              <span className="val">{lock.n}</span>
+              <button onClick={() => setN(lock.n + 1)} disabled={lock.n >= MAX_N}>+</button>
+            </div>
+          </div>
+          <div className="field" style={{ marginLeft: "auto" }}>
+            <label>&nbsp;</label>
+            <div className="toolbar">
+              <button className="btn ghost" onClick={() => setLock(freshLock())}>Новый</button>
+              <button className="btn ghost" onClick={() => setLock(exampleLock())}>Пример</button>
+              <button className="btn" onClick={saveCurrent}>Сохранить</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 18 }}>
+          <div style={{ fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)", marginBottom: 8 }}>
+            Положение штырьков (нажмите на паз)
+          </div>
+          <PositionsEditor lock={lock} setLock={setLock} />
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2><span className="ord">2</span>Связи пластин</h2>
+        <LinkageMatrix lock={lock} setLock={setLock} />
+      </div>
+
+      <Solver lock={lock} />
+
+      <div className="panel">
+        <h2><span className="ord">✦</span>Сохранённые замки</h2>
+        {saved.length === 0
+          ? <div className="empty-hint">Пока пусто. Настройте замок и нажмите «Сохранить» — он останется здесь после перезагрузки.</div>
+          : <div className="chips">
+              {saved.map(e => (
+                <span className="chip" key={e.id}>
+                  <button className="load" onClick={() => loadSaved(e)} title="Загрузить">
+                    {e.name} <span style={{ color: "var(--text-faint)" }}>· {e.n}п</span>
+                  </button>
+                  <button className="del" onClick={() => delSaved(e.id)} title="Удалить">×</button>
+                </span>
+              ))}
+            </div>}
+      </div>
+
+      <div className="foot">
+        Данные хранятся локально в этом браузере. Решатель ищет кратчайший путь, при котором ни одна пластина не упирается в край.
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
